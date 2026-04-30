@@ -1,0 +1,44 @@
+stages:
+  collect_data:
+    cmd: python src/collect_data.py
+    deps:
+      - src/collect_data.py
+    outs:
+      - data/raw
+
+  split_data:
+    cmd: python src/split_dataset.py
+    deps:
+      - src/split_dataset.py
+      - data/raw
+    outs:
+      - dataset
+
+  augment:
+    cmd: python src/augment.py
+    deps:
+      - src/augment.py
+      - dataset/train
+    outs:
+      - dataset/train
+
+  train:
+    cmd: python src/train.py
+    deps:
+      - src/train.py
+      - dataset
+      - params.yaml
+    params:
+      - training
+    outs:
+      - models/saved
+      - plots
+
+  evaluate:
+    cmd: python src/evaluate.py
+    deps:
+      - src/evaluate.py
+      - models/saved
+      - dataset/test
+    outs:
+      - results

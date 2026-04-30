@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  politician-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: politician-classifier-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../models:/app/models
+      - ../results:/app/results
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    networks:
+      - politician-net
+
+  mlflow:
+    image: python:3.10-slim
+    container_name: mlflow-server
+    command: >
+      sh -c "pip install mlflow &&
+             mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri /mlruns"
+    ports:
+      - "5000:5000"
+    volumes:
+      - ../mlruns:/mlruns
+    restart: unless-stopped
+    networks:
+      - politician-net
+
+networks:
+  politician-net:
+    driver: bridge

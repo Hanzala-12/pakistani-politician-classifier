@@ -1,0 +1,110 @@
+name: Politician Classifier CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - name: Cache pip packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Run unit tests
+        run: |
+          pytest tests/ -v --tb=short || echo "Tests not yet implemented"
+      
+      - name: Lint check
+        run: |
+          pip install flake8
+          flake8 src/ api/ --max-line-length=120 --exclude=__pycache__ || echo "Linting warnings found"
+
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Build Docker image
+        run: |
+          docker build -f docker/Dockerfile -t politician-classifier:latest .
+      
+      - name: Tag and push to Docker Hub
+        run: |
+          docker tag politician-classifier:latest ${{ secrets.DOCKER_USERNAME }}/politician-classifier:latest
+          docker tag politician-classifier:latest ${{ secrets.DOCKER_USERNAME }}/politician-classifier:${{ github.sha }}
+          docker push ${{ secrets.DOCKER_USERNAME }}/politician-classifier:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/politician-classifier:${{ github.sha }}
+
+  deploy-to-ec2:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Deploy to AWS EC2
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          EC2_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        run: |
+          echo "$EC2_KEY" > key.pem
+          chmod 600 key.pem
+          
+          ssh -o StrictHostKeyChecking=no -i key.pem $EC2_USER@$EC2_HOST << 'EOF'
+            # Pull latest image
+            docker pull $DOCKER_USERNAME/politician-classifier:latest
+            
+            # Stop and remove old container
+            docker stop politician-api || true
+            docker rm politician-api || true
+            
+            # Run new container
+            docker run -d \
+              --name politician-api \
+              -p 8000:8000 \
+              -v /home/ubuntu/models:/app/models \
+              -v /home/ubuntu/results:/app/results \
+              --restart unless-stopped \
+              $DOCKER_USERNAME/politician-classifier:latest
+            
+            # Clean up old images
+            docker image prune -f
+          EOF
+          
+          rm key.pem

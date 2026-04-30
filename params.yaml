@@ -1,0 +1,13 @@
+training:
+  epochs: 30
+  batch_size: 32
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  scheduler: cosine
+  early_stopping_patience: 7
+  models_to_train:
+    - resnet50
+    - resnet152
+    - efficientnet_b3
+    - vgg16
+    - convnext_base
