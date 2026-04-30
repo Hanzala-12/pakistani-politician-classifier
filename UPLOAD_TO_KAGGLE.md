@@ -5,12 +5,19 @@
 **File:** `notebooks/COMPLETE_TRAINING_PIPELINE.ipynb`
 
 This is a **complete Jupyter notebook** with ALL code in cells:
-- ✅ Data collection
-- ✅ Data splitting
+- ✅ Data collection (web scraping + face detection)
+- ✅ Data splitting (train/val/test)
 - ✅ Data augmentation
-- ✅ Model training
-- ✅ Evaluation
+- ✅ Model training (ResNet50 + EfficientNet-B3)
+- ✅ Evaluation with **visual outputs**
 - ✅ Everything in ONE notebook!
+
+**📊 The notebook SHOWS results in Kaggle:**
+- Training curves (loss & accuracy plots)
+- Confusion matrices (heatmaps)
+- Classification reports (precision, recall, F1)
+- Final comparison table
+- **AND saves model files for download**
 
 ---
 
