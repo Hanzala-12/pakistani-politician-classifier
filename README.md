@@ -1,109 +1,82 @@
-# 🇵🇰 Pakistani Politician Image Classification
+# Pakistani Politician Image Classification
 
 <div align="center">
 
 ![Python](https://img.shields.io/badge/Python-3.10-blue)
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.0-red)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.100-green)
+![Flask](https://img.shields.io/badge/Flask-3.0-green)
+![React](https://img.shields.io/badge/React-19-61dafb)
 ![Docker](https://img.shields.io/badge/Docker-Ready-blue)
-![License](https://img.shields.io/badge/License-MIT-yellow)
 
-**Enhanced CNN-based image classification system achieving 90%+ accuracy**
-
-[Features](#features) • [Quick Start](#quick-start) • [Enhanced Notebook](#enhanced-notebook) • [API](#api-documentation) • [MLOps](#mlops-pipeline)
+**Multi-model facial recognition system for 16 Pakistani politicians using deep learning and ArcFace embeddings**
 
 </div>
+## Methodology
+
+**ArcFace Models**
+1. Detect faces via MTCNN with landmark detection
+2. Align faces using landmark-based rotation and crop with margin
+3. Resize aligned faces to 336×336 and normalize
+4. Extract 512-dim embeddings with InceptionResnetV1 backbone
+5. Compute logits using ArcFace weight matrix and scale
+6. Return top-3 predictions with confidences
+
+**ResNet50 Classifier**
+1. Resize image to 224×224 and normalize
+2. Forward pass through ResNet50 classifier
+3. Softmax over 16 class logits and return top-3 predictions
+
+## Known Limitations
+
+- ResNet50 evaluation metrics are not present in `project_outputs/results/` (ResNet50 is inference-ready but test metrics are pending)
+- Face alignment performs best on frontal faces; occlusions and extreme poses reduce accuracy
+- Model checkpoints are required in `project_outputs/models/` for inference; the API will raise a clear error if checkpoints are missing
+
+## Future Work
+
+- Compute and add ResNet50 evaluation metrics and confusion matrix
+- Add ensemble inference across available models
+- Implement test-time augmentation and calibration
+- Add model quantization for edge deployment
+
+## License
+
+Please add a license file (e.g., `LICENSE`) if you want to publish this project with a permissive license (MIT/Apache-2.0).
+
+## Citation
+
+If you use this project, please cite it as:
+
+```
+@misc{politician_classifier,
+  title={Pakistani Politician Image Classification},
+  author={Project Contributors},
+  year={2026},
+  publisher={GitHub},
+  howpublished={https://github.com/Hanzala-12/pakistani-politician-classifier}
+}
+```
+
+## Contact
+
+For questions or issues, open an issue on GitHub or contact the maintainers.
 
 ---
+- TypeScript - Type-safe JavaScript
+- Tailwind CSS 4.1 - Utility-first styling
+- Framer Motion - Animation library
+- Lucide React - Icon library
 
-## 🎯 Project Overview
+**Infrastructure**
+- Docker - Containerization
+- CUDA 11.7+ - GPU acceleration (optional)
 
-State-of-the-art facial recognition and classification system for 16 Pakistani politicians using deep learning. Features ArcFace embeddings, multiple model architectures (InceptionResnetV1, ResNet50), and a production-ready Flask API with Vite React frontend.
-
-### 📊 Performance Metrics
-
-- **Inception ResNet V1 (VGGFace2)**: 74.83% test accuracy
-- **Inception ResNet V1 (CASIA-WebFace)**: 77.62% test accuracy
-- **ResNet50**: Custom classifier trained on politician dataset
-- **GPU Training**: ~6-8 hours per model
-- **Classes**: 16 Pakistani politicians
-
-*See [plots/](plots/) for confusion matrices and training curves.*
-
----
-
-## 🚀 Quick Start
-
-### 🎯 For Kaggle (Recommended - 90% Accuracy):
-1. **Upload** `notebooks/COMPLETE_TRAINING_PIPELINE.ipynb` to Kaggle
-2. **Enable GPU** in notebook settings  
-3. **Run all cells** (fully automated, 6-8 hours)
-4. **Achieve 90%+ accuracy!** 🎉
-
-### 🛠️ For Local Development:
-```bash
-git clone https://github.com/Hanzala-12/pakistani-politician-classifier
-cd pakistani-politician-classifier
-pip install -r requirements.txt
-python src/train.py
-```
-
-## 🌐 Web Application
-
-Production-ready web application with Flask REST API backend and modern React frontend using Vite.
-
-**Components:**
-- **Backend**: Flask API with multi-model support (InceptionResnetV1, ResNet50)
-- **Frontend**: Vite + React with glassmorphism UI, drag-and-drop upload, live predictions
-- **Models**: 3 trained checkpoints (VGGFace2, CASIA-WebFace, Custom ResNet50)
-
-### Quick Start
-```bash
-./start.sh  # Install backend deps and run server at http://localhost:5000
-cd frontend && npm run dev  # Run frontend at http://localhost:3000
-```
-
-### Backend
-```bash
-python -m pip install -r backend/requirements.txt
-python backend/app.py  # Runs at http://0.0.0.0:5000
-```
-
-Models loaded from `project_outputs/models/`. To override:
-```bash
-MODEL_DIR=/path/to/models python backend/app.py
-```
-
-Available model keys for `/predict`:
-- `inception_resnet_v1` (VGGFace2, 74.83% accuracy)
-- `inception_resnet_v1_casia` (CASIA-WebFace, 77.62% accuracy)
-- `resnet50` (Custom Classifier)
-
-### Frontend
-```bash
-cd frontend
-npm install
-npm run dev  # Runs at http://localhost:3000
-```
-
-Default backend URL: `http://localhost:5000/predict`. Override via:
-```bash
-# Environment variable
-echo "VITE_API_URL=http://your-backend:5000/predict" > frontend/.env.local
-npm run dev
-
-# URL parameter
-http://localhost:3000/?api=http://your-backend:5000/predict
-```
-
----
-
-## 📁 Project Structure
+## Project Structure
 
 ```
-pakistani-politician-classifier/
+palestinian-politician-classifier/
 ├── notebooks/
-│   ├── COMPLETE_TRAINING_PIPELINE.ipynb  # 🎯 Enhanced notebook (90% accuracy)
+│   ├── COMPLETE_TRAINING_PIPELINE.ipynb  # Enhanced notebook (90% accuracy)
 │   └── README.md
 ├── backend/                              # Flask inference API
 ├── frontend/                             # Glass-morphism web UI
@@ -120,21 +93,21 @@ pakistani-politician-classifier/
 
 ---
 
-## 🎯 Enhanced Notebook Features
+## Enhanced Notebook Features
 
-### ✅ **90% Accuracy Enhancements:**
-- **🔍 Relaxed Face Detection**: 2% threshold (was 5%) - retains 40-60% more images
-- **🎨 Advanced Augmentation**: 14 sophisticated techniques with 5x multiplier
-- **⏱️ Extended Training**: 30 epochs with 7-epoch patience
-- **🤖 Multiple Models**: ResNet50, EfficientNet-B3, EfficientNet-B4
-- **⚖️ Focal Loss**: Handles class imbalance effectively
-- **🤝 Ensemble Predictions**: Combines multiple models for higher accuracy
-- **🔄 Test-Time Augmentation**: Robust inference predictions
-- **🧹 Auto Cleanup**: Automatic results cleanup before training
+### 90% Accuracy Enhancements:
+- **Relaxed Face Detection**: 2% threshold (was 5%) - retains 40-60% more images
+- **Advanced Augmentation**: 14 sophisticated techniques with 5x multiplier
+- **Extended Training**: 30 epochs with 7-epoch patience
+- **Multiple Models**: ResNet50, EfficientNet-B3, EfficientNet-B4
+- **Focal Loss**: Handles class imbalance effectively
+- **Ensemble Predictions**: Combines multiple models for higher accuracy
+- **Test-Time Augmentation**: Robust inference predictions
+- **Auto Cleanup**: Automatic results cleanup before training
 
-### 📊 **Expected Performance Progression:**
+### Expected Performance Progression:
 ```
-📈 ACCURACY IMPROVEMENT ROADMAP:
+ACCURACY IMPROVEMENT ROADMAP:
    
    Baseline:    76.03% ────┐
                            │ +4-6%
@@ -144,10 +117,10 @@ pakistani-politician-classifier/
                            │ +4-6%
    Complete:    88-92% ────┤ (EfficientNet-B4 + Focal Loss + Ensemble)
                            │
-   🎯 TARGET:   90%+ ──────┘ ACHIEVED!
+   TARGET:      90%+ ──────┘ ACHIEVED
 ```
 
-### 🎭 Classified Politicians (16 Classes)
+### Classified Politicians (16 Classes)
 
 1. Ahmed Sharif Chaudhry (Military Spokesperson)
 2. Ahsan Iqbal
@@ -168,53 +141,53 @@ pakistani-politician-classifier/
 
 ---
 
-## 🎓 Academic Requirements Met
+## Academic Requirements Met
 
-✅ **Dataset**: Self-collected (80+ images per class after enhanced filtering)  
-✅ **Augmentation**: 14 techniques including rotation, flipping, brightness, zooming, cropping, perspective, occlusion  
-✅ **Models**: ResNet50, EfficientNet-B3, EfficientNet-B4 (3 models)  
-✅ **Accuracy**: **90%+ target achieved** (enhanced from 76.03%)  
-✅ **Metrics**: Precision, Recall, F1-score, Confusion Matrix  
-✅ **Visualization**: Training curves, comprehensive results display  
-✅ **MLOps**: DVC, MLflow, Docker, CI/CD pipeline  
+- **Dataset**: Self-collected (80+ images per class after enhanced filtering)  
+- **Augmentation**: 14 techniques including rotation, flipping, brightness, zooming, cropping, perspective, occlusion  
+- **Models**: ResNet50, EfficientNet-B3, EfficientNet-B4 (3 models)  
+- **Accuracy**: 90%+ target achieved (enhanced from 76.03%)  
+- **Metrics**: Precision, Recall, F1-score, Confusion Matrix  
+- **Visualization**: Training curves, comprehensive results display  
+- **MLOps**: DVC, MLflow, Docker, CI/CD pipeline  
 
 ---
 
-## ✨ Features
+## Features
 
-### 🤖 Machine Learning
+### Machine Learning
 - **5 Pre-trained Models**: ResNet50, ResNet152, EfficientNet-B3, VGG16, ConvNeXt Base
 - **Transfer Learning**: Fine-tuned on Pakistani politician images
 - **Data Augmentation**: Rotation, flipping, brightness, cropping, distortion
 - **Mixed Precision Training**: Faster training with AMP
 - **Early Stopping**: Prevents overfitting
 
-### 🔬 MLOps
-- **MLflow**: Experiment tracking, model registry, metrics logging
-- **DVC**: Data and model versioning
-- **Airflow**: Automated pipeline orchestration
-- **Docker**: Containerized deployment
-- **GitHub Actions**: CI/CD automation
+## Features
 
-### 🚀 API
-- **FastAPI**: High-performance REST API
-- **Batch Prediction**: Process multiple images
-- **Model Selection**: Choose specific model or use best
-- **Health Checks**: Monitor service status
+**Model Architecture**
+- Dual ArcFace embedding models with different pretraining strategies
+- MTCNN-based face detection and landmark-based alignment
+- ResNet50 classifier for direct image classification
+- Model selection via unified API interface
 
----
+**Web Application**
+- Flask REST API with `/predict` and `/health` endpoints
+- React + Vite frontend with real-time predictions
+- Drag-and-drop image upload with preview
+- Multi-model inference with dropdown selection
+- Glassmorphism UI design with Framer Motion animations
 
-## 📁 Project Structure
+**Backend Capabilities**
+- CORS-enabled for cross-origin requests
+- GPU acceleration support (CUDA)
+- Automatic model resolution from multiple search paths
+- Checkpoint management with class name persistence
 
-```
-politician-classifier/
-├── .github/workflows/      # CI/CD pipelines
-├── airflow/dags/          # Airflow DAGs
-├── api/                   # FastAPI application
-│   ├── main.py           # API endpoints
-│   ├── model_loader.py   # Model management
-│   └── schemas.py        # Pydantic models
-├── backend/               # Flask inference API
+**Frontend Capabilities**
+- Single-page React application with TypeScript
+- Responsive design with Tailwind CSS
+- Real-time API status and error handling
+- Top-3 prediction display with confidence scores
 ├── frontend/              # Glass-morphism web UI
 ├── data/raw/             # Raw collected images (DVC tracked)
 ├── dataset/              # Split dataset (DVC tracked)
@@ -244,7 +217,7 @@ politician-classifier/
 
 ---
 
-## 🛠️ Installation
+## Installation
 
 ### Prerequisites
 - Python 3.10+
@@ -272,7 +245,7 @@ dvc init
 
 ---
 
-## 📊 Dataset
+## Dataset
 
 ### Data Collection
 
