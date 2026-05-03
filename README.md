@@ -21,8 +21,8 @@
 
 This project classifies facial images of 16 prominent Pakistani politicians using three deep learning approaches:
 
-- **InceptionResNetV1 + ArcFace** (VGGFace2 pretrained) — best performing model at **83.64% validation accuracy**
-- **InceptionResNetV1 + ArcFace** (CASIA-WebFace pretrained) — **81.78% validation accuracy**
+- **InceptionResNetV1 + ArcFace** (VGGFace2 pretrained) — **83.64% validation accuracy**, **74.83% test accuracy**
+- **InceptionResNetV1 + ArcFace** (CASIA-WebFace pretrained) — **81.78% validation accuracy**, **77.62% test accuracy**
 - **ResNet50 Classifier** — **80.35% peak validation accuracy**, **76.03% test accuracy**
 
 The system features MTCNN-based face detection with landmark alignment, a Flask REST API, a glassmorphism React frontend, and a complete MLOps stack (DVC, MLflow, Airflow, Docker).
