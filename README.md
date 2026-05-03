@@ -48,11 +48,11 @@ The system features MTCNN-based face detection with landmark alignment, a Flask 
 
 ### Final Model Comparison
 
-| Model | Best Val Accuracy | Macro Precision | Macro Recall | Macro F1 |
-|-------|------------------|-----------------|--------------|----------|
-| **InceptionResNetV1** (VGGFace2 + ArcFace) | **83.64%** | 0.7750 | 0.7544 | 0.7593 |
-| InceptionResNetV1 (CASIA-WebFace + ArcFace) | 81.78% | 0.7972 | 0.7820 | 0.7822 |
-| ResNet50 (Transfer Learning) | 80.35% | 0.8010 | 0.7600 | 0.7630 |
+| Model | Best Val Accuracy | Test Accuracy | Macro Precision | Macro Recall | Macro F1 |
+|-------|------------------|---------------|-----------------|--------------|----------|
+| **InceptionResNetV1** (VGGFace2 + ArcFace) | **83.64%** | **74.83%** | 0.7750 | 0.7544 | 0.7593 |
+| InceptionResNetV1 (CASIA-WebFace + ArcFace) | **81.78%** | **77.62%** | 0.7972 | 0.7820 | 0.7822 |
+| ResNet50 (Transfer Learning) | 80.35% | 76.03% | 0.8010 | 0.7600 | 0.7630 |
 
 > **Note on ResNet50:** Peak validation accuracy was **80.35%** at epoch 8. Test accuracy on the held-out set was **76.03%**, reflecting a generalisation gap caused by the small dataset size (see [Known Limitations](#known-limitations)).
 
@@ -80,13 +80,13 @@ Both InceptionResNetV1 models used ArcFace metric learning with the following se
 
 **Training & Validation Curves**
 
-![ResNet50 Training Curves](resnet50_curves.png)
+![ResNet50 Training Curves](project_outputs/plots/resnet50_curves.png)
 
 > The sharp divergence between train (~98%) and validation (~80%) accuracy after epoch 6 (when the backbone was unfrozen) is a clear sign of overfitting — a direct consequence of the small dataset. Val loss plateaus around 0.9 while train loss approaches zero, confirming the model memorises training examples rather than generalising to unseen faces.
 
 **Confusion Matrix**
 
-![ResNet50 Confusion Matrix](resnet50_confusion_matrix.png)
+![ResNet50 Confusion Matrix](project_outputs/plots/resnet50_confusion_matrix.png)
 
 ---
 
@@ -94,13 +94,13 @@ Both InceptionResNetV1 models used ArcFace metric learning with the following se
 
 **Training & Validation Curves**
 
-![InceptionResNetV1 Training Curves](inception_resnet_v1_curves.png)
+![InceptionResNetV1 Training Curves](project_outputs/plots/inception_resnet_v1_curves.png)
 
 > Train and val loss decrease and converge closely throughout training, demonstrating that ArcFace's angular margin regularisation significantly reduces overfitting compared to the ResNet50 approach. Val accuracy stabilises above 82% from epoch 3 onward, peaking at 83.64%.
 
 **Confusion Matrix**
 
-![InceptionResNetV1 Confusion Matrix](inception_resnet_v1_confusion_matrix.png)
+![InceptionResNetV1 Confusion Matrix](project_outputs/plots/inception_resnet_v1_confusion_matrix.png)
 
 ---
 
@@ -108,13 +108,13 @@ Both InceptionResNetV1 models used ArcFace metric learning with the following se
 
 **Training & Validation Curves**
 
-![InceptionResNetV1 CASIA Training Curves](inception_resnet_v1_casia_curves.png)
+![InceptionResNetV1 CASIA Training Curves](project_outputs/plots/inception_resnet_v1_casia_curves.png)
 
 > The CASIA-pretrained model shows slightly more instability in early epochs (val accuracy dips around epoch 6) compared to the VGGFace2 variant. This is expected — VGGFace2 is a larger and more diverse face recognition dataset, providing a stronger pretrained initialisation. Despite this, the model plateaus near 81–82% validation accuracy by epoch 10 and maintains it through to early stopping at epoch 20.
 
 **Confusion Matrix**
 
-![InceptionResNetV1 CASIA Confusion Matrix](inception_resnet_v1_casia_confusion_matrix.png)
+![InceptionResNetV1 CASIA Confusion Matrix](project_outputs/plots/inception_resnet_v1_casia_confusion_matrix.png)
 
 ---
 
