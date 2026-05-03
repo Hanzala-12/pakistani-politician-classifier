@@ -18,15 +18,17 @@
 
 ## 🎯 Project Overview
 
-This project implements a state-of-the-art image classification system to identify 16 Pakistani politicians and public figures using deep learning. **The system has been enhanced to achieve 90%+ accuracy** through advanced techniques including relaxed face detection, sophisticated data augmentation, ensemble predictions, and focal loss.
+State-of-the-art facial recognition and classification system for 16 Pakistani politicians using deep learning. Features ArcFace embeddings, multiple model architectures (InceptionResnetV1, ResNet50), and a production-ready Flask API with Vite React frontend.
 
-### 📊 Performance Achievements
+### 📊 Performance Metrics
 
-- **🎯 Target Accuracy**: 90%+ (Professor requirement)
-- **📈 Enhanced Performance**: 76.03% → **90%+** (14%+ improvement)
-- **🤖 Models**: ResNet50, EfficientNet-B3, EfficientNet-B4
-- **⏱️ Training Time**: 6-8 hours with GPU
-- **🎭 Classes**: 16 Pakistani politicians + 1 military spokesperson
+- **Inception ResNet V1 (VGGFace2)**: 74.83% test accuracy
+- **Inception ResNet V1 (CASIA-WebFace)**: 77.62% test accuracy
+- **ResNet50**: Custom classifier trained on politician dataset
+- **GPU Training**: ~6-8 hours per model
+- **Classes**: 16 Pakistani politicians
+
+*See [plots/](plots/) for confusion matrices and training curves.*
 
 ---
 
@@ -46,6 +48,54 @@ pip install -r requirements.txt
 python src/train.py
 ```
 
+## 🌐 Web Application
+
+Production-ready web application with Flask REST API backend and modern React frontend using Vite.
+
+**Components:**
+- **Backend**: Flask API with multi-model support (InceptionResnetV1, ResNet50)
+- **Frontend**: Vite + React with glassmorphism UI, drag-and-drop upload, live predictions
+- **Models**: 3 trained checkpoints (VGGFace2, CASIA-WebFace, Custom ResNet50)
+
+### Quick Start
+```bash
+./start.sh  # Install backend deps and run server at http://localhost:5000
+cd frontend && npm run dev  # Run frontend at http://localhost:3000
+```
+
+### Backend
+```bash
+python -m pip install -r backend/requirements.txt
+python backend/app.py  # Runs at http://0.0.0.0:5000
+```
+
+Models loaded from `project_outputs/models/`. To override:
+```bash
+MODEL_DIR=/path/to/models python backend/app.py
+```
+
+Available model keys for `/predict`:
+- `inception_resnet_v1` (VGGFace2, 74.83% accuracy)
+- `inception_resnet_v1_casia` (CASIA-WebFace, 77.62% accuracy)
+- `resnet50` (Custom Classifier)
+
+### Frontend
+```bash
+cd frontend
+npm install
+npm run dev  # Runs at http://localhost:3000
+```
+
+Default backend URL: `http://localhost:5000/predict`. Override via:
+```bash
+# Environment variable
+echo "VITE_API_URL=http://your-backend:5000/predict" > frontend/.env.local
+npm run dev
+
+# URL parameter
+http://localhost:3000/?api=http://your-backend:5000/predict
+```
+
 ---
 
 ## 📁 Project Structure
@@ -55,6 +105,8 @@ pakistani-politician-classifier/
 ├── notebooks/
 │   ├── COMPLETE_TRAINING_PIPELINE.ipynb  # 🎯 Enhanced notebook (90% accuracy)
 │   └── README.md
+├── backend/                              # Flask inference API
+├── frontend/                             # Glass-morphism web UI
 ├── src/                                   # Source code modules
 ├── api/                                   # FastAPI REST API
 ├── docker/                               # Docker containerization
@@ -62,6 +114,7 @@ pakistani-politician-classifier/
 ├── .kiro/specs/                          # Technical specifications
 ├── README.md                             # This file
 ├── requirements.txt                      # Dependencies
+├── start.sh                               # Start backend quickly
 └── FINAL_IMPLEMENTATION_REPORT.md        # Detailed implementation report
 ```
 
@@ -161,6 +214,8 @@ politician-classifier/
 │   ├── main.py           # API endpoints
 │   ├── model_loader.py   # Model management
 │   └── schemas.py        # Pydantic models
+├── backend/               # Flask inference API
+├── frontend/              # Glass-morphism web UI
 ├── data/raw/             # Raw collected images (DVC tracked)
 ├── dataset/              # Split dataset (DVC tracked)
 │   ├── train/
@@ -183,7 +238,8 @@ politician-classifier/
 ├── tests/                # Unit tests
 ├── dvc.yaml             # DVC pipeline
 ├── params.yaml          # Training parameters
-└── requirements.txt     # Python dependencies
+├── requirements.txt     # Python dependencies
+└── start.sh              # Start backend quickly
 ```
 
 ---

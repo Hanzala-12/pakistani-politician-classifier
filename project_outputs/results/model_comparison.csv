@@ -1,0 +1,3 @@
+model,test_acc,precision,recall,f1
+inception_resnet_v1,74.83%,0.7750,0.7544,0.7593
+inception_resnet_v1_casia,77.62%,0.7972,0.7820,0.7822
