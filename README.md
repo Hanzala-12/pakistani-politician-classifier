@@ -1,218 +1,169 @@
-# Pakistani Politician Image Classification
+# Pakistani Politician Image Classifier
 
 <div align="center">
 
-![Python](https://img.shields.io/badge/Python-3.10-blue)
-![PyTorch](https://img.shields.io/badge/PyTorch-2.0-red)
-![Flask](https://img.shields.io/badge/Flask-3.0-green)
-![React](https://img.shields.io/badge/React-19-61dafb)
-![Docker](https://img.shields.io/badge/Docker-Ready-blue)
+![Python](https://img.shields.io/badge/Python-3.10+-blue?style=flat-square&logo=python)
+![PyTorch](https://img.shields.io/badge/PyTorch-2.0-red?style=flat-square&logo=pytorch)
+![Flask](https://img.shields.io/badge/Flask-3.0-green?style=flat-square&logo=flask)
+![React](https://img.shields.io/badge/React-19-61dafb?style=flat-square&logo=react)
+![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker)
+![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)
 
-**Multi-model facial recognition system for 16 Pakistani politicians using deep learning and ArcFace embeddings**
+**A multi-model facial recognition system for classifying 16 Pakistani politicians using deep learning, ArcFace metric learning, and a full MLOps pipeline.**
+
+[Overview](#overview) · [Models & Results](#models--results) · [Training Plots](#training-plots) · [Installation](#installation) · [Usage](#usage) · [API](#api-documentation) · [MLOps](#mlops-pipeline) · [Deployment](#docker-deployment)
 
 </div>
-## Methodology
-
-**ArcFace Models**
-1. Detect faces via MTCNN with landmark detection
-2. Align faces using landmark-based rotation and crop with margin
-3. Resize aligned faces to 336×336 and normalize
-4. Extract 512-dim embeddings with InceptionResnetV1 backbone
-5. Compute logits using ArcFace weight matrix and scale
-6. Return top-3 predictions with confidences
-
-**ResNet50 Classifier**
-1. Resize image to 224×224 and normalize
-2. Forward pass through ResNet50 classifier
-3. Softmax over 16 class logits and return top-3 predictions
-
-## Known Limitations
-
-- ResNet50 evaluation metrics are not present in `project_outputs/results/` (ResNet50 is inference-ready but test metrics are pending)
-- Face alignment performs best on frontal faces; occlusions and extreme poses reduce accuracy
-- Model checkpoints are required in `project_outputs/models/` for inference; the API will raise a clear error if checkpoints are missing
-
-## Future Work
-
-- Compute and add ResNet50 evaluation metrics and confusion matrix
-- Add ensemble inference across available models
-- Implement test-time augmentation and calibration
-- Add model quantization for edge deployment
-
-## License
-
-Please add a license file (e.g., `LICENSE`) if you want to publish this project with a permissive license (MIT/Apache-2.0).
-
-## Citation
-
-If you use this project, please cite it as:
-
-```
-@misc{politician_classifier,
-  title={Pakistani Politician Image Classification},
-  author={Project Contributors},
-  year={2026},
-  publisher={GitHub},
-  howpublished={https://github.com/Hanzala-12/pakistani-politician-classifier}
-}
-```
-
-## Contact
-
-For questions or issues, open an issue on GitHub or contact the maintainers.
 
 ---
-- TypeScript - Type-safe JavaScript
-- Tailwind CSS 4.1 - Utility-first styling
-- Framer Motion - Animation library
-- Lucide React - Icon library
 
-**Infrastructure**
-- Docker - Containerization
-- CUDA 11.7+ - GPU acceleration (optional)
+## Overview
+
+This project classifies facial images of 16 prominent Pakistani politicians using three deep learning approaches:
+
+- **InceptionResNetV1 + ArcFace** (VGGFace2 pretrained) — best performing model at **83.64% validation accuracy**
+- **InceptionResNetV1 + ArcFace** (CASIA-WebFace pretrained) — **81.78% validation accuracy**
+- **ResNet50 Classifier** — **80.35% peak validation accuracy**, **76.03% test accuracy**
+
+The system features MTCNN-based face detection with landmark alignment, a Flask REST API, a glassmorphism React frontend, and a complete MLOps stack (DVC, MLflow, Airflow, Docker).
+
+---
+
+## Classified Politicians (16 Classes)
+
+| # | Name | # | Name |
+|---|------|---|------|
+| 1 | Ahmed Sharif Chaudhry | 9 | Fazlur Rehman |
+| 2 | Ahsan Iqbal | 10 | Imran Khan |
+| 3 | Altaf Hussain | 11 | Khawaja Asif |
+| 4 | Asfandyar Wali | 12 | Maryam Nawaz |
+| 5 | Asif Ali Zardari | 13 | Nawaz Sharif |
+| 6 | Barrister Gohar | 14 | Pervez Musharraf |
+| 7 | Bilawal Bhutto | 15 | Shahbaz Sharif |
+| 8 | Chaudhry Shujaat | 16 | Shehryar Afridi |
+
+---
+
+## Models & Results
+
+### Final Model Comparison
+
+| Model | Best Val Accuracy | Macro Precision | Macro Recall | Macro F1 |
+|-------|------------------|-----------------|--------------|----------|
+| **InceptionResNetV1** (VGGFace2 + ArcFace) | **83.64%** | 0.7750 | 0.7544 | 0.7593 |
+| InceptionResNetV1 (CASIA-WebFace + ArcFace) | 81.78% | 0.7972 | 0.7820 | 0.7822 |
+| ResNet50 (Transfer Learning) | 80.35% | 0.8010 | 0.7600 | 0.7630 |
+
+> **Note on ResNet50:** Peak validation accuracy was **80.35%** at epoch 8. Test accuracy on the held-out set was **76.03%**, reflecting a generalisation gap caused by the small dataset size (see [Known Limitations](#known-limitations)).
+
+### ArcFace Training Configuration
+
+Both InceptionResNetV1 models used ArcFace metric learning with the following setup:
+
+- `ArcMarginProduct`: in_features=512, out_features=16, s=64.0, m=0.3
+- Validation logits computed **without** angular margin (cosine similarity only)
+- Optimizer rebuilt at epoch 6 with ArcFace parameters retained across all groups
+- Early stopping patience: 10 epochs
+
+### ResNet50 Training Configuration
+
+- Progressive unfreezing: backbone frozen for epochs 1–5, fully unfrozen from epoch 6
+- Peak validation accuracy: **80.35%** at epoch 8
+- Early stopping triggered at epoch 13
+- Mixed precision training (AMP) enabled
+
+---
+
+## Training Plots
+
+### ResNet50
+
+**Training & Validation Curves**
+
+![ResNet50 Training Curves](resnet50_curves.png)
+
+> The sharp divergence between train (~98%) and validation (~80%) accuracy after epoch 6 (when the backbone was unfrozen) is a clear sign of overfitting — a direct consequence of the small dataset. Val loss plateaus around 0.9 while train loss approaches zero, confirming the model memorises training examples rather than generalising to unseen faces.
+
+**Confusion Matrix**
+
+![ResNet50 Confusion Matrix](resnet50_confusion_matrix.png)
+
+---
+
+### InceptionResNetV1 — VGGFace2 + ArcFace
+
+**Training & Validation Curves**
+
+![InceptionResNetV1 Training Curves](inception_resnet_v1_curves.png)
+
+> Train and val loss decrease and converge closely throughout training, demonstrating that ArcFace's angular margin regularisation significantly reduces overfitting compared to the ResNet50 approach. Val accuracy stabilises above 82% from epoch 3 onward, peaking at 83.64%.
+
+**Confusion Matrix**
+
+![InceptionResNetV1 Confusion Matrix](inception_resnet_v1_confusion_matrix.png)
+
+---
+
+### InceptionResNetV1 — CASIA-WebFace + ArcFace
+
+**Training & Validation Curves**
+
+![InceptionResNetV1 CASIA Training Curves](inception_resnet_v1_casia_curves.png)
+
+> The CASIA-pretrained model shows slightly more instability in early epochs (val accuracy dips around epoch 6) compared to the VGGFace2 variant. This is expected — VGGFace2 is a larger and more diverse face recognition dataset, providing a stronger pretrained initialisation. Despite this, the model plateaus near 81–82% validation accuracy by epoch 10 and maintains it through to early stopping at epoch 20.
+
+**Confusion Matrix**
+
+![InceptionResNetV1 CASIA Confusion Matrix](inception_resnet_v1_casia_confusion_matrix.png)
+
+---
+
+## Methodology
+
+### ArcFace Models (InceptionResNetV1)
+
+1. Detect faces via MTCNN with 5-point landmark detection
+2. Align faces using landmark-based rotation and center crop with margin
+3. Resize aligned faces to 336×336 and normalize
+4. Extract 512-dimensional embeddings with InceptionResNetV1 backbone
+5. Compute logits via ArcFace weight matrix with angular margin (s=64, m=0.3)
+6. Return top-3 predictions with confidence scores
+
+### ResNet50 Classifier
+
+1. Resize image to 224×224 and normalize
+2. Forward pass through fine-tuned ResNet50 (ImageNet pretrained)
+3. Softmax over 16 class logits → return top-3 predictions
+
+---
 
 ## Project Structure
 
 ```
-palestinian-politician-classifier/
+pakistani-politician-classifier/
 ├── notebooks/
-│   ├── COMPLETE_TRAINING_PIPELINE.ipynb  # Enhanced notebook (90% accuracy)
+│   ├── COMPLETE_TRAINING_PIPELINE.ipynb  # Full training notebook
 │   └── README.md
 ├── backend/                              # Flask inference API
-├── frontend/                             # Glass-morphism web UI
-├── src/                                   # Source code modules
-├── api/                                   # FastAPI REST API
-├── docker/                               # Docker containerization
-├── tests/                                # Unit tests
-├── .kiro/specs/                          # Technical specifications
-├── README.md                             # This file
-├── requirements.txt                      # Dependencies
-├── start.sh                               # Start backend quickly
-└── FINAL_IMPLEMENTATION_REPORT.md        # Detailed implementation report
-```
-
----
-
-## Enhanced Notebook Features
-
-### 90% Accuracy Enhancements:
-- **Relaxed Face Detection**: 2% threshold (was 5%) - retains 40-60% more images
-- **Advanced Augmentation**: 14 sophisticated techniques with 5x multiplier
-- **Extended Training**: 30 epochs with 7-epoch patience
-- **Multiple Models**: ResNet50, EfficientNet-B3, EfficientNet-B4
-- **Focal Loss**: Handles class imbalance effectively
-- **Ensemble Predictions**: Combines multiple models for higher accuracy
-- **Test-Time Augmentation**: Robust inference predictions
-- **Auto Cleanup**: Automatic results cleanup before training
-
-### Expected Performance Progression:
-```
-ACCURACY IMPROVEMENT ROADMAP:
-   
-   Baseline:    76.03% ────┐
-                           │ +4-6%
-   Enhanced:    80-82% ────┤ (Relaxed detection + 5x augmentation)
-                           │ +4-6%  
-   Advanced:    84-86% ────┤ (Enhanced augmentation + extended training)
-                           │ +4-6%
-   Complete:    88-92% ────┤ (EfficientNet-B4 + Focal Loss + Ensemble)
-                           │
-   TARGET:      90%+ ──────┘ ACHIEVED
-```
-
-### Classified Politicians (16 Classes)
-
-1. Ahmed Sharif Chaudhry (Military Spokesperson)
-2. Ahsan Iqbal
-3. Altaf Hussain
-4. Asfandyar Wali
-5. Asif Ali Zardari
-6. Barrister Gohar
-7. Bilawal Bhutto
-8. Chaudhry Shujaat
-9. Fazlur Rehman
-10. Imran Khan
-11. Khawaja Asif
-12. Maryam Nawaz
-13. Nawaz Sharif
-14. Pervez Musharraf
-15. Shahbaz Sharif
-16. Shehryar Afridi
-
----
-
-## Academic Requirements Met
-
-- **Dataset**: Self-collected (80+ images per class after enhanced filtering)  
-- **Augmentation**: 14 techniques including rotation, flipping, brightness, zooming, cropping, perspective, occlusion  
-- **Models**: ResNet50, EfficientNet-B3, EfficientNet-B4 (3 models)  
-- **Accuracy**: 90%+ target achieved (enhanced from 76.03%)  
-- **Metrics**: Precision, Recall, F1-score, Confusion Matrix  
-- **Visualization**: Training curves, comprehensive results display  
-- **MLOps**: DVC, MLflow, Docker, CI/CD pipeline  
-
----
-
-## Features
-
-### Machine Learning
-- **5 Pre-trained Models**: ResNet50, ResNet152, EfficientNet-B3, VGG16, ConvNeXt Base
-- **Transfer Learning**: Fine-tuned on Pakistani politician images
-- **Data Augmentation**: Rotation, flipping, brightness, cropping, distortion
-- **Mixed Precision Training**: Faster training with AMP
-- **Early Stopping**: Prevents overfitting
-
-## Features
-
-**Model Architecture**
-- Dual ArcFace embedding models with different pretraining strategies
-- MTCNN-based face detection and landmark-based alignment
-- ResNet50 classifier for direct image classification
-- Model selection via unified API interface
-
-**Web Application**
-- Flask REST API with `/predict` and `/health` endpoints
-- React + Vite frontend with real-time predictions
-- Drag-and-drop image upload with preview
-- Multi-model inference with dropdown selection
-- Glassmorphism UI design with Framer Motion animations
-
-**Backend Capabilities**
-- CORS-enabled for cross-origin requests
-- GPU acceleration support (CUDA)
-- Automatic model resolution from multiple search paths
-- Checkpoint management with class name persistence
-
-**Frontend Capabilities**
-- Single-page React application with TypeScript
-- Responsive design with Tailwind CSS
-- Real-time API status and error handling
-- Top-3 prediction display with confidence scores
-├── frontend/              # Glass-morphism web UI
-├── data/raw/             # Raw collected images (DVC tracked)
-├── dataset/              # Split dataset (DVC tracked)
-│   ├── train/
-│   ├── val/
-│   └── test/
-├── docker/               # Docker configuration
-├── models/saved/         # Trained model checkpoints
-├── notebooks/            # Jupyter notebooks
-│   ├── eda.ipynb        # Exploratory analysis
-│   └── complete_training_pipeline.ipynb  # Standalone Kaggle notebook
-├── plots/                # Training curves, confusion matrices
-├── results/              # Evaluation reports
-├── src/                  # Source code
-│   ├── collect_data.py  # Data collection
-│   ├── split_dataset.py # Dataset splitting
-│   ├── augment.py       # Data augmentation
-│   ├── train.py         # Training script
-│   ├── evaluate.py      # Evaluation script
-│   └── predict.py       # Prediction script
-├── tests/                # Unit tests
-├── dvc.yaml             # DVC pipeline
-├── params.yaml          # Training parameters
-├── requirements.txt     # Python dependencies
-└── start.sh              # Start backend quickly
+├── frontend/                             # React glassmorphism web UI
+├── src/                                  # Source code modules
+│   ├── collect_data.py                  # Image crawling & filtering
+│   ├── split_dataset.py                 # Train/val/test split
+│   ├── augment.py                       # Data augmentation
+│   ├── train.py                         # Training script
+│   ├── evaluate.py                      # Evaluation & metrics
+│   └── predict.py                       # Inference script
+├── api/                                  # FastAPI REST API
+├── docker/                              # Docker configuration
+├── tests/                               # Unit tests
+├── project_outputs/
+│   ├── models/                          # Trained model checkpoints
+│   └── results/                         # Evaluation reports & plots
+├── dvc.yaml                             # DVC pipeline definition
+├── params.yaml                          # Training hyperparameters
+├── requirements.txt                     # Python dependencies
+├── start.sh                             # Quick backend launcher
+└── FINAL_IMPLEMENTATION_REPORT.md       # Detailed implementation report
 ```
 
 ---
@@ -220,162 +171,91 @@ ACCURACY IMPROVEMENT ROADMAP:
 ## Installation
 
 ### Prerequisites
+
 - Python 3.10+
-- CUDA 11.7+ (for GPU training)
-- Docker (optional, for deployment)
-- Git & DVC
+- CUDA 11.7+ (optional, for GPU acceleration)
+- Docker (optional, for containerised deployment)
+- Git
 
 ### Local Setup
 
 ```bash
-# Clone repository
-git clone https://github.com/yourusername/pakistani-politician-classifier.git
+# Clone the repository
+git clone https://github.com/Hanzala-12/pakistani-politician-classifier.git
 cd pakistani-politician-classifier
 
-# Create virtual environment
+# Create and activate a virtual environment
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate        # Linux/macOS
+# venv\Scripts\activate         # Windows
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Initialize DVC
+# (Optional) Initialize DVC for data versioning
 dvc init
 ```
 
 ---
 
-## Dataset
+## Usage
 
-### Data Collection
+### Data Pipeline
 
 ```bash
-# Collect images using web crawlers
+# Collect images via web crawler (Bing/Google)
 python src/collect_data.py
-```
 
-**Process:**
-1. Crawls images from Bing and Google
-2. Applies face detection filtering (OpenCV Haar Cascade)
-3. Keeps only images with faces >15% of image area
-4. Target: 80+ images per class
-
-### Data Splitting
-
-```bash
-# Split into train/val/test
+# Split into train / val / test (75% / 15% / 10%)
 python src/split_dataset.py
-```
 
-**Split Ratios:**
-- Train: 75%
-- Validation: 15%
-- Test: 10%
-
-### Data Augmentation
-
-```bash
-# Augment training data
+# Apply augmentation to the training set
 python src/augment.py
 ```
 
-**Augmentations:**
-- Random rotation (±30°)
-- Horizontal flip
-- Brightness/contrast adjustment
-- Random scaling and cropping
-- Gaussian blur
-- Hue/saturation variation
-- Grid distortion
-
----
-
-## 🧠 Models
-
-### Supported Architectures
-
-| Model | Parameters | Input Size | Pretrained |
-|-------|-----------|------------|------------|
-| ResNet50 | 25.6M | 224×224 | ImageNet |
-| ResNet152 | 60.2M | 224×224 | ImageNet |
-| EfficientNet-B3 | 12.2M | 224×224 | ImageNet |
-| VGG16 | 138.4M | 224×224 | ImageNet |
-| ConvNeXt Base | 88.6M | 224×224 | ImageNet |
-
-### Training Strategy
-
-1. **Phase 1 (Epochs 1-5)**: Freeze backbone, train only classifier head
-2. **Phase 2 (Epochs 6-30)**: Unfreeze all layers, full fine-tuning with reduced LR
-
----
-
-## 🏋️ Training
-
-### Option A: Local Python Scripts
+### Training
 
 ```bash
-# Train all models
 python src/train.py
-
-# View MLflow UI
-mlflow ui --port 5000
-# Open http://localhost:5000
 ```
 
-### Option B: Kaggle Notebook (Recommended)
-
-1. Upload `notebooks/complete_training_pipeline.ipynb` to Kaggle
-2. Enable GPU accelerator
-3. Run all cells
-4. Download trained models
-
-### Option C: DVC Pipeline
-
-```bash
-# Run entire pipeline
-dvc repro
-
-# Push data/models to remote
-dvc push
-```
-
-### Configuration
-
-Edit `params.yaml`:
+Key hyperparameters (`params.yaml`):
 
 ```yaml
 training:
-  epochs: 30
   batch_size: 32
-  learning_rate: 0.001
+  num_epochs: 20
+  learning_rate: 0.0001
   weight_decay: 0.0001
   scheduler: cosine
-  early_stopping_patience: 7
-  models_to_train:
-    - resnet50
-    - efficientnet_b3
+  early_stopping_patience: 10
 ```
 
----
-
-## 📈 Evaluation
+### Evaluation
 
 ```bash
-# Evaluate all trained models
 python src/evaluate.py
 ```
 
-**Generates:**
-- Classification reports (precision, recall, F1)
-- Confusion matrices
-- Top-5 misclassified samples
-- Model comparison table
+Generates classification reports, confusion matrices, and a model comparison table saved to `project_outputs/results/`.
+
+### Inference
+
+```bash
+python src/predict.py --image path/to/image.jpg --model inception_resnet_v1
+```
+
+### Quick Start
+
+```bash
+bash start.sh
+```
 
 ---
 
-## 🌐 API Documentation
+## API Documentation
 
-### Start API Server
+### Start the Server
 
 ```bash
 # Development
@@ -387,43 +267,33 @@ uvicorn api.main:app --host 0.0.0.0 --port 8000 --workers 4
 
 ### Endpoints
 
-#### Health Check
-```bash
-GET /health
-```
+#### `GET /health`
 
-**Response:**
 ```json
 {
   "status": "ok",
-  "models_loaded": ["resnet50", "efficientnet_b3"],
+  "models_loaded": ["inception_resnet_v1", "inception_resnet_v1_casia", "resnet50"],
   "device": "cuda"
 }
 ```
 
-#### Get Classes
-```bash
-GET /classes
-```
+#### `GET /classes`
 
-**Response:**
 ```json
 {
-  "classes": ["ahmed_sharif_chaudhry", "ahsan_iqbal", ...],
+  "classes": ["ahmed_sharif_chaudhry", "ahsan_iqbal", "..."],
   "count": 16
 }
 ```
 
-#### Predict Single Image
-```bash
-POST /predict
-Content-Type: multipart/form-data
+#### `POST /predict`
 
-file: <image_file>
-model_name: resnet50  # optional
+```bash
+curl -X POST "http://localhost:8000/predict" \
+  -F "file=@politician.jpg" \
+  -F "model_name=inception_resnet_v1"
 ```
 
-**Response:**
 ```json
 {
   "predicted_class": "imran_khan",
@@ -433,34 +303,14 @@ model_name: resnet50  # optional
     {"class": "shahbaz_sharif", "confidence": 0.04},
     {"class": "nawaz_sharif", "confidence": 0.02}
   ],
-  "model_used": "resnet50",
-  "inference_time_ms": 45.2
+  "model_used": "inception_resnet_v1",
+  "inference_time_ms": 38.5
 }
 ```
 
-#### Batch Prediction
-```bash
-POST /predict/batch
-Content-Type: multipart/form-data
-
-files: <image_file_1>
-files: <image_file_2>
-...
-```
-
-### cURL Examples
+#### `POST /predict/batch`
 
 ```bash
-# Single prediction
-curl -X POST "http://localhost:8000/predict" \
-  -F "file=@politician.jpg"
-
-# With specific model
-curl -X POST "http://localhost:8000/predict" \
-  -F "file=@politician.jpg" \
-  -F "model_name=efficientnet_b3"
-
-# Batch prediction
 curl -X POST "http://localhost:8000/predict/batch" \
   -F "files=@img1.jpg" \
   -F "files=@img2.jpg"
@@ -468,174 +318,159 @@ curl -X POST "http://localhost:8000/predict/batch" \
 
 ---
 
-## 🔄 MLOps Pipeline
-
-### MLOps Pipeline Overview
-
-The MLOps pipeline for this project is structured around four core tools: **DVC**, **MLflow**, **Airflow**, and **Docker**.
-
-**DVC** handles dataset versioning by tracking all raw and split data files, ensuring every experiment is reproducible from the exact same data snapshot without committing large files to Git.
-
-**MLflow** is integrated directly into the training loop to automatically log all hyperparameters, per-epoch metrics (train/val loss and accuracy), model artifacts, and evaluation plots for every model run, making it easy to compare ResNet, EfficientNet, VGG, and ConvNeXt experiments side by side through the MLflow UI.
-
-**Airflow** orchestrates the entire pipeline as a DAG with five sequential tasks — data collection, splitting, augmentation, training, and evaluation — allowing the full workflow to be triggered, monitored, and scheduled automatically without manual intervention.
-
-**Docker** is used purely for model serving, packaging only the trained model weights and the FastAPI inference API into a container that exposes the /predict endpoint; it is intentionally kept separate from the training pipeline so that the image does not need to be rebuilt whenever training is re-run — the container is built once, deployed to AWS EC2, and remains stable while models are updated by mounting the weights directory as a volume.
-
-### DVC Workflow
+## Web Application
 
 ```bash
-# Initialize DVC
-dvc init
-
-# Track data
-dvc add data/raw
-dvc add dataset
-
-# Configure remote storage
-dvc remote add -d myremote s3://your-bucket/politician-classifier
-
-# Push data
-dvc push
-
-# Pull data (on new machine)
-dvc pull
+bash start.sh
+# Frontend: http://localhost:5173
+# API:      http://localhost:8000
 ```
 
-### MLflow Tracking
+**Features:** Drag-and-drop image upload · Model selection dropdown · Top-3 predictions with confidence bars · Real-time API health indicator · Glassmorphism UI with Framer Motion animations
+
+**Tech Stack:** React 19 · TypeScript · Vite · Tailwind CSS 4 · Framer Motion · Lucide React
+
+---
+
+## MLOps Pipeline
+
+### DVC — Data Versioning
 
 ```bash
-# Start MLflow UI
-mlflow ui --port 5000
+dvc add data/raw dataset
+dvc remote add -d myremote s3://your-bucket/politician-classifier
+dvc push   # upload data
+dvc pull   # restore on a new machine
+```
 
+### MLflow — Experiment Tracking
+
+```bash
+mlflow ui --port 5000
 # View at http://localhost:5000
 ```
 
-### Airflow DAG
+All training runs automatically log hyperparameters, per-epoch metrics, model artifacts, and evaluation plots.
+
+### Airflow — Pipeline Orchestration
 
 ```bash
-# Start Airflow
 airflow standalone
-
-# Trigger pipeline
 airflow dags trigger politician_classifier_pipeline
 ```
 
+DAG: `collect_data → split_dataset → augment → train → evaluate`
+
+### CI/CD — GitHub Actions
+
+Triggers on push to `main`/`develop` and on pull requests.
+
+| Job | Description |
+|-----|-------------|
+| Test | Unit tests + linting |
+| Build & Push | Docker image → Docker Hub |
+| Deploy | SSH deploy to AWS EC2 |
+
+**Required Secrets:** `DOCKER_USERNAME`, `DOCKER_PASSWORD`, `EC2_HOST`, `EC2_USER`, `EC2_PRIVATE_KEY`
+
 ---
 
-## 🐳 Docker Deployment
-
-### Build Image
+## Docker Deployment
 
 ```bash
+# Build the image
 docker build -f docker/Dockerfile -t politician-classifier:latest .
-```
 
-### Run Container
-
-```bash
+# Run (model weights mounted as a volume — no rebuild needed on model updates)
 docker run -d \
   --name politician-api \
   -p 8000:8000 \
-  -v $(pwd)/models:/app/models \
+  -v $(pwd)/project_outputs/models:/app/models \
   politician-classifier:latest
-```
 
-### Docker Compose
-
-```bash
-# Start all services (API + MLflow)
+# Or with Docker Compose (API + MLflow)
 docker-compose -f docker/docker-compose.yml up -d
-
-# Stop services
-docker-compose -f docker/docker-compose.yml down
 ```
 
 ---
 
-## 🚀 CI/CD Pipeline
-
-### GitHub Actions Workflow
-
-**Triggers:** Push to `main` or `develop`, Pull Requests
-
-**Jobs:**
-1. **Test**: Run unit tests and linting
-2. **Build & Push**: Build Docker image, push to Docker Hub
-3. **Deploy**: Deploy to AWS EC2
-
-### Setup Secrets
-
-Add these secrets to your GitHub repository:
-
-- `DOCKER_USERNAME`: Docker Hub username
-- `DOCKER_PASSWORD`: Docker Hub password
-- `EC2_HOST`: EC2 instance IP
-- `EC2_USER`: EC2 SSH user (e.g., `ubuntu`)
-- `EC2_PRIVATE_KEY`: EC2 SSH private key
-
----
-
-## 📊 Results
-
-### Model Performance
-
-| Model | Test Accuracy | Macro Precision | Macro Recall | Macro F1 |
-|-------|--------------|-----------------|--------------|----------|
-| ResNet50 | 92.5% | 0.9234 | 0.9187 | 0.9210 |
-| ResNet152 | 93.8% | 0.9356 | 0.9312 | 0.9334 |
-| EfficientNet-B3 | 94.2% | 0.9401 | 0.9378 | 0.9389 |
-| VGG16 | 91.3% | 0.9098 | 0.9045 | 0.9071 |
-| ConvNeXt Base | 95.1% | 0.9487 | 0.9456 | 0.9471 |
-
-*Note: Results will vary based on actual training*
-
----
-
-## 🧪 Testing
+## Testing
 
 ```bash
-# Run all tests
 pytest tests/ -v
-
-# Run specific test file
-pytest tests/test_model.py -v
-
-# Run with coverage
 pytest tests/ --cov=src --cov-report=html
 ```
 
 ---
 
-## 🤝 Contributing
+## Known Limitations
 
-Contributions are welcome! Please follow these steps:
+This project was built under real academic constraints. The following limitations are acknowledged honestly and transparently.
+
+**Small Dataset**
+Images were self-collected from public web sources (Bing/Google image search) with a target of ~80 images per class after face detection filtering. This is a very small dataset for a 16-class facial recognition task — production systems typically train on hundreds of thousands to millions of images per identity. Our dataset size is the single largest factor limiting accuracy and is the direct cause of the overfitting visible in ResNet50's training curves (train accuracy ~98% vs. val accuracy ~80%).
+
+**Noisy, Imbalanced Web-Crawled Data**
+Web-crawled images are inherently noisy: variable resolution, inconsistent lighting, mixed age ranges, and occasional mislabelled images. Some politicians have far more public imagery available than others, making truly balanced collection difficult. This introduces implicit bias in what each model learns per class.
+
+**Small Test Set**
+The held-out test set contains approximately 121 images across 16 classes (roughly 6–9 images per politician). Per-class statistics derived from such small samples carry high variance — a single misclassification can shift an individual class F1-score by over 10%. The reported numbers should be read as indicative, not as statistically stable benchmarks.
+
+**Face Detection Dependency**
+All three models require a detectable, reasonably frontal face. The ArcFace pipeline is additionally sensitive to face alignment quality from MTCNN's landmark detection. Heavily occluded faces, extreme head poses, very low-resolution images, or group photographs may cause detection failure or significantly degraded predictions.
+
+**Multiprocessing Warnings During ResNet50 Training**
+During ResNet50 training inside the Jupyter notebook, PyTorch's DataLoader produced `AssertionError: can only test a child process` warnings from multiprocessing worker cleanup at epoch boundaries. These are benign — they arise from how notebook kernels manage forked processes — and do not affect training correctness, convergence, or the saved model weights.
+
+**No Real-Time or Video Inference**
+The current system handles static images only. There is no streaming, webcam, or video frame inference pipeline.
+
+---
+
+## Future Work
+
+- Expand the dataset with more diverse, verified images per class to reduce overfitting
+- Ensemble inference combining all three models for higher robustness
+- Test-time augmentation for more stable predictions on difficult inputs
+- Model quantization for edge/mobile deployment
+- Real-time video inference pipeline
+
+---
+
+## Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Commit: `git commit -m 'Add your feature'`
+4. Push: `git push origin feature/your-feature`
 5. Open a Pull Request
 
 ---
 
-## 📄 License
+## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 🙏 Acknowledgments
-
-- Pre-trained models from [PyTorch](https://pytorch.org/) and [timm](https://github.com/huggingface/pytorch-image-models)
-- Image data collected from public sources
-- Inspired by modern MLOps best practices
+MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-## 📧 Contact
+## Citation
 
-For questions or feedback, please open an issue on GitHub.
+```bibtex
+@misc{pakistani_politician_classifier,
+  title   = {Pakistani Politician Image Classifier},
+  author  = {Hanzala},
+  year    = {2026},
+  url     = {https://github.com/Hanzala-12/pakistani-politician-classifier}
+}
+```
+
+---
+
+## Acknowledgements
+
+- [facenet-pytorch](https://github.com/timesler/facenet-pytorch) — MTCNN face detection and InceptionResNetV1 implementation
+- [PyTorch](https://pytorch.org/) and [torchvision](https://pytorch.org/vision/) — training infrastructure
+- Image data collected from publicly available web sources
 
 ---
 
@@ -643,6 +478,6 @@ For questions or feedback, please open an issue on GitHub.
 
 **Made with ❤️ for Pakistan**
 
-⭐ Star this repo if you find it useful!
+⭐ If you find this project useful, please give it a star!
 
 </div>
