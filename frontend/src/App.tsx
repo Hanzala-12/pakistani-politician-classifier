@@ -27,9 +27,9 @@ const CLASS_MAPPINGS: Record<string, string> = {
 };
 
 const AVAILABLE_MODELS = [
-  { id: 'inception_resnet_v1', name: 'Inception ResNet v1' },
-  { id: 'vggface2', name: 'VGGFace2' },
-  { id: 'facenet', name: 'FaceNet' },
+  { id: 'inception_resnet_v1', name: 'InceptionResNetV1 (VGGFace2)' },
+  { id: 'inception_resnet_v1_casia', name: 'InceptionResNetV1 (CASIA)' },
+  { id: 'resnet50', name: 'ResNet-50' },
 ];
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string) || 'http://127.0.0.1:5000';
