@@ -328,6 +328,20 @@ Warning: Rewriting history with force-push affects all collaborators — coordin
 
 ---
 
+## ‼️ Responsible Use
+
+This project uses facial recognition technology applied to images of real public figures. The code, models, and data in this repository are provided strictly for educational, research, and demonstration purposes only. They are not intended for operational surveillance, profiling, or commercial deployment.
+
+This system must not be used for surveillance, profiling, automated decision-making that affects people's rights, or any activity that violates privacy, civil liberties, or applicable law. No consent was obtained from the individuals whose images were collected for the dataset; however, the images were sourced from publicly available web pages.
+
+Users are responsible for ensuring that any use of the code, models, or data complies with applicable laws, regulations, and institutional policies governing biometric and personal data. This includes data protection legislation, platform terms of service, and any jurisdictional restrictions on collecting or processing biometric identifiers.
+
+Models trained from this data may exhibit biases due to imbalanced, non-representative, or noisy training samples. Do not use the outputs of these models to make decisions that materially affect individuals (for example, related to employment, credit, housing, immigration, or law enforcement).
+
+Before deploying or sharing systems derived from this repository, perform an ethical and legal review, obtain necessary approvals and consents where required, and implement appropriate safeguards (including human oversight, transparency about limitations, and opt-out mechanisms). If you are unsure whether a proposed use is appropriate, consult legal counsel, institutional review boards, or privacy experts.
+
+Consider the ethical implications carefully and document any additional safeguards you apply.
+
 ## Acknowledgements
 
 - [facenet-pytorch](https://github.com/timesler/facenet-pytorch) — MTCNN and InceptionResNetV1 implementations
