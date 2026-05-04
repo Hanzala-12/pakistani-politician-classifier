@@ -13,11 +13,16 @@ CORS(app)
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    if "image" not in request.files:
-        return jsonify({"error": "No image file uploaded."}), 400
+    # Accept either 'image' or legacy 'file' form field
+    uploaded = None
+    if "image" in request.files:
+        uploaded = request.files["image"]
+    elif "file" in request.files:
+        uploaded = request.files["file"]
+    else:
+        return jsonify({"error": "No image file uploaded. Use form field 'image' or 'file'."}), 400
 
-    file = request.files["image"]
-    if not file or file.filename == "":
+    if not uploaded or uploaded.filename == "":
         return jsonify({"error": "Empty filename."}), 400
 
     model_key = request.form.get("model") or request.args.get("model")
@@ -27,7 +32,7 @@ def predict():
             model_key = None
 
     try:
-        image_bytes = file.read()
+        image_bytes = uploaded.read()
         image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     except Exception:
         return jsonify({"error": "Invalid image file."}), 400
@@ -36,11 +41,42 @@ def predict():
         predictor = get_predictor(model_key=model_key)
     except (FileNotFoundError, ValueError, RuntimeError) as exc:
         return jsonify({"error": str(exc)}), 400
-    result = predictor.predict_pil(image, top_k=3)
-    if "error" in result:
-        return jsonify(result), 400
 
-    return jsonify(result)
+    result = predictor.predict_pil(image, top_k=3)
+
+    def _normalize_result(r: dict) -> dict:
+        if not isinstance(r, dict):
+            return {"error": "Invalid predictor result."}
+        if "error" in r:
+            return {"error": r.get("error")}
+
+        predicted = r.get("predicted_class") or r.get("predicted_label") or r.get("predicted")
+        confidence = float(r.get("confidence") or 0.0)
+
+        topk = r.get("top_k") or r.get("top3") or []
+        predictions = []
+        for item in topk:
+            if not isinstance(item, dict):
+                continue
+            label = item.get("label") or item.get("class") or item.get("name")
+            if label is None:
+                continue
+            conf_i = float(item.get("confidence", 0.0))
+            predictions.append({"label": label, "confidence": conf_i})
+
+        if not predictions and predicted:
+            predictions = [{"label": predicted, "confidence": confidence}]
+
+        return {
+            "predicted_class": predicted,
+            "confidence": confidence,
+            "predictions": predictions,
+            "top3": [{"class": p["label"], "confidence": p["confidence"]} for p in predictions],
+        }
+
+    normalized = _normalize_result(result)
+    # Always return 200 with normalized JSON; frontend will inspect 'error' field if present
+    return jsonify(normalized)
 
 
 @app.route("/health", methods=["GET"])
@@ -105,22 +141,36 @@ def predict_batch():
         start = time.time()
         try:
             r = predictor.predict_pil(image, top_k=3)
+            # Normalize single predictor result into frontend-friendly shape
+            if not isinstance(r, dict):
+                results.append({'filename': filename, 'error': 'Invalid predictor response.'})
+                continue
             if 'error' in r:
                 results.append({'filename': filename, 'error': r.get('error')})
                 continue
 
-            top3 = []
-            for item in r.get('top_k', [])[:3]:
+            predicted = r.get('predicted_label') or r.get('predicted_class') or r.get('predicted')
+            confidence = float(r.get('confidence', 0.0))
+
+            raw_topk = r.get('top_k') or r.get('top3') or []
+            predictions = []
+            for item in raw_topk[:3]:
                 label = item.get('label') or item.get('name') or item.get('class')
+                if label is None:
+                    continue
                 conf = float(item.get('confidence', 0.0))
-                top3.append({'class': label, 'confidence': conf})
+                predictions.append({'label': label, 'confidence': conf})
+
+            # Fallback: if no predictions but predicted present, create one
+            if not predictions and predicted:
+                predictions = [{'label': predicted, 'confidence': confidence}]
 
             inference_time_ms = int((time.time() - start) * 1000)
             results.append({
                 'filename': filename,
-                'predicted_class': r.get('predicted_label') or r.get('predicted_class'),
-                'confidence': float(r.get('confidence', 0.0)),
-                'top3': top3,
+                'predicted_class': predicted,
+                'confidence': confidence,
+                'predictions': predictions,
                 'inference_time_ms': inference_time_ms,
             })
         except Exception as exc:
