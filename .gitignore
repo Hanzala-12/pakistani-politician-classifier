@@ -63,3 +63,13 @@ Thumbs.db
 # Environment
 .env
 .env.local
+
+# Local secrets (do not commit)
+scrapper/_secrets.py
+
+# Private artifacts (datasets and trained models) - DO NOT PUSH
+# Ignore full data directories and model artifacts to prevent accidental commits
+data/
+dataset/
+models/
+project_outputs/models/
