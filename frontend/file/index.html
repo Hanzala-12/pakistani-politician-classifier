@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aurora Politics - AI Architecture</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Base styles for the animated blobbies just for index.html */
+        .aurora-bg {
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            mix-blend-mode: multiply;
+            filter: blur(120px);
+            opacity: 0.3;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .blob-1 {
+            top: -10%; left: -5%; width: 60vw; height: 60vw;
+            background: #a5b4fc; /* indigo-300 */
+            animation-duration: 15s;
+        }
+
+        .blob-2 {
+            top: 20%; right: -10%; width: 50vw; height: 50vw;
+            background: #67e8f9; /* cyan-300 */
+            animation-duration: 18s;
+            animation-delay: -5s;
+        }
+
+        .blob-3 {
+            bottom: -20%; left: 10%; width: 70vw; height: 70vw;
+            background: #d8b4fe; /* purple-300 */
+            animation-duration: 22s;
+            animation-delay: -10s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.05); }
+            66% { transform: translate(-20px, 20px) scale(0.95); }
+        }
+    </style>
+</head>
+<body>
+    <div class="aurora-bg">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="main-wrapper">
+        <div class="container">
+            <header class="header">
+                <h1>Identity Architecture</h1>
+                <p>Politician Classification • Neural Vision Model</p>
+            </header>
+            
+            <main class="card" id="upload-card">
+                <div class="card-content">
+                    <div class="drop-zone" id="drop-zone">
+                        <input type="file" id="file-input" accept="image/*" hidden>
+                        
+                        <div id="upload-prompt" class="upload-state">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="upload-icon" style="margin-bottom: 24px; padding: 12px; background: rgba(255,255,255,0.8); border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                                <polyline points="16 16 12 12 8 16"></polyline>
+                                <line x1="12" y1="12" x2="12" y2="21"></line>
+                                <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
+                                <polyline points="16 16 12 12 8 16"></polyline>
+                            </svg>
+                            <div class="upload-prompt">
+                                <h3 style="color: #1e293b; font-weight: 800; font-size: 16px; margin-bottom: 8px;">Drop analysis target</h3>
+                                <p style="color: #64748b; font-weight: 600;">Click to browse filesystem</p>
+                            </div>
+                        </div>
+                        
+                        <div id="preview-container" class="preview-state hidden">
+                            <img id="image-preview" src="" alt="Preview" style="border-radius: 1rem; width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0;">
+                            <div class="preview-overlay" style="position: absolute; inset: 0; background: rgba(15, 23, 42, 0.4); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; border-radius: 1rem; color: white; font-weight: 600;">
+                                <span>Replace Target</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="error-message" class="alert hidden">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <span id="error-text">An error occurred.</span>
+                    </div>
+
+                    <button id="classify-btn" class="btn primary-btn" disabled>
+                        <span id="btn-text">Execute Classification</span>
+                        <div id="spinner" class="spinner hidden"></div>
+                    </button>
+                    <p style="text-align: center; font-size: 10px; color: #64748b; font-weight: 600; margin-top: 1.5rem; max-width: 250px; margin-left: auto; margin-right: auto;">Local Inference API required. Python backend must be running.</p>
+                </div>
+            </main>
+            
+            <section id="results-panel" class="card results-panel hidden">
+                <div class="card-content" style="display: flex; flex-direction: column; h-full;">
+                    <h2>Analysis Results</h2>
+                    
+                    <div class="main-prediction">
+                        <div class="prediction-header">
+                            <span id="primary-name" class="name">Processing...</span>
+                            <span id="primary-confidence" class="confidence">--%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div id="primary-bar" class="progress-fill gradient-fill"></div>
+                        </div>
+                    </div>
+
+                    <div class="top3-predictions">
+                        <h3>Probability Distribution</h3>
+                        <div id="top3-container" class="top3-container">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <div class="system-status">
+                        <span>● System Active</span>
+                        <p>REST // Local Inference</p>
+                    </div>
+                </div>
+            </section>
+
+            <footer>Neural Architecture &copy; 2024</footer>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+    <script>
+        // Adjust standard hover effects for the preview overlay
+        document.getElementById('drop-zone').addEventListener('mouseenter', function() {
+            var overlay = document.querySelector('.preview-overlay');
+            if(overlay && !document.getElementById('preview-container').classList.contains('hidden')) {
+                overlay.style.opacity = '1';
+            }
+        });
+        document.getElementById('drop-zone').addEventListener('mouseleave', function() {
+            var overlay = document.querySelector('.preview-overlay');
+            if(overlay) {
+                overlay.style.opacity = '0';
+            }
+        });
+    </script>
+</body>
+</html>

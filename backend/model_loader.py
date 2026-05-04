@@ -282,7 +282,15 @@ class ModelPredictor:
         scale = float(self.arcface_eval.get("scale", 64.0))
         if weight is None:
             raise RuntimeError("arcface_eval weight missing.")
-        weight = weight.to(embeddings.device)
+        # Ensure weight is a torch tensor on the correct device
+        if not isinstance(weight, torch.Tensor):
+            try:
+                weight = torch.as_tensor(weight, device=embeddings.device)
+            except Exception:
+                # Fallback: move device after tensor conversion
+                weight = torch.tensor(weight).to(embeddings.device)
+        else:
+            weight = weight.to(embeddings.device)
         embeddings = F.normalize(embeddings, dim=1)
         weight = F.normalize(weight, dim=1)
         return scale * (embeddings @ weight.t())

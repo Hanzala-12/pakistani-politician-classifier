@@ -1,18 +1,27 @@
-# Frontend UI
+<div align="center">
+<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+</div>
 
-Vite + React UI for the politician classifier. It calls the Flask backend at `/predict` and lets you choose the model (VGGFace2 or CASIA).
+# Run and deploy your AI Studio app
 
-## Run locally
+This contains everything you need to run your app locally.
 
-**Prerequisites:** Node.js
+View your app in AI Studio: https://ai.studio/apps/d6340e86-f364-41f6-b346-7f4fa7b4e84b
+
+## Run Locally
+
+**Prerequisites:**  Node.js
+
 
 1. Install dependencies:
    `npm install`
-2. (Optional) Create `.env.local` and set `VITE_API_URL` to your backend predict endpoint.
-3. Start the dev server:
+2. Create a local env file from the example and set the backend URL:
+   - Copy `.env.example` to `.env.local` (or create `.env`)
+   - Edit `VITE_API_BASE_URL` to point to your backend, e.g. `VITE_API_BASE_URL="http://127.0.0.1:5000"`
+3. (Optional) Set the `GEMINI_API_KEY` in `.env.local` if used by the app
+4. Run the app:
    `npm run dev`
 
-## Config
-
-- `VITE_API_URL`: full URL to the Flask `/predict` endpoint (default: `http://localhost:5000/predict`).
-- You can override per session by opening `http://localhost:3000/?api=http://localhost:5000/predict`.
+Notes:
+- The frontend expects the backend to expose `POST /predict` (single) and `POST /predict/batch` (multipart form uploads). These are used for single-image and batch inference respectively.
+- CORS must be enabled on the backend for `http://localhost:3000` in development. The project's backend currently enables CORS globally.
