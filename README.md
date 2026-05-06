@@ -139,20 +139,41 @@ Representative visuals from the experiments are shown below.
 ```
 pakistani-politician-classifier/
 ├── notebooks/
-│   └── COMPLETE_TRAINING_PIPELINE.ipynb   # Full training notebook
+│   └── COMPLETE_TRAINING_PIPELINE.ipynb    # Reference notebook (Kaggle)
+│
+├── training/                               # ★ Production training package (Kaggle)
+│   ├── config.py                           #   Central config — edit here first
+│   ├── arcface.py                          #   ArcMarginProduct + ArcFaceLoss
+│   ├── models.py                           #   Model factories + wrappers
+│   ├── data_prep.py                        #   MTCNN align, pHash dedup, split, augment
+│   ├── datasets.py                         #   PoliticianDataset + dataloader factory
+│   ├── training.py                         #   ArcFace + CE training loops
+│   ├── evaluate.py                         #   Evaluation, confusion matrix, audit
+│   ├── predict.py                          #   Single-image inference CLI
+│   ├── utils.py                            #   set_seed, install_package, ensemble
+│   └── main.py                             #   Pipeline entry point
+│
+├── src/                                    # Legacy package (MLflow / DVC pipeline)
+│   ├── config.py                           #   Mirrors training/config.py
+│   ├── train.py                            #   MLflow-tracked training
+│   ├── evaluate.py                         #   MLflow evaluation
+│   ├── predict.py                          #   CLI inference (CE models)
+│   ├── augment.py                          #   Offline augmentation
+│   ├── split_dataset.py                    #   Train/val/test split
+│   └── collect_data.py                     #   Web scraping
+│
 ├── backend/                                # Flask inference API
 ├── frontend/                               # React glassmorphism web UI
-├── src/                                    # Source modules: split, augment, train, eval, predict
 ├── api/                                    # FastAPI REST API
 ├── docker/                                 # Docker configuration
 ├── tests/                                  # Unit tests
 ├── project_outputs/
-│   ├── models/                             # Trained model checkpoints (.pth)
-│   ├── plots/                              # Training curves, confusion matrices
+│   ├── models/                             # Trained .pth checkpoints
+│   ├── plots/                              # Training curves + confusion matrices
 │   └── results/                            # model_comparison.csv
 ├── requirements.txt
-├── start.sh
-└── FINAL_IMPLEMENTATION_REPORT.md
+├── QUICKSTART.md
+└── start.sh
 ```
 
 ---
@@ -178,7 +199,7 @@ venv\Scripts\activate           # Windows
 pip install -r requirements.txt
 ```
 
-### Quick Start
+### Quick Start (API + Frontend)
 
 ```bash
 bash start.sh
@@ -192,6 +213,57 @@ Upload an image through the drag-and-drop UI or call the API directly:
 curl -X POST "http://localhost:8000/predict" \
   -F "file=@politician.jpg" \
   -F "model_name=inception_resnet_v1"
+```
+
+---
+
+## Training Pipeline
+
+### Option 1 — Kaggle (recommended)
+
+1. Upload `notebooks/COMPLETE_TRAINING_PIPELINE.ipynb` to a Kaggle notebook
+2. Enable **GPU T4 x2**, attach the dataset
+3. Click **Run All** — outputs land in `/kaggle/working/`
+
+Or use the modular package directly in a Kaggle cell:
+
+```python
+import sys
+sys.path.insert(0, '/kaggle/input/<your-dataset-slug>')
+from training.main import main
+main()
+```
+
+### Option 2 — Local (one command)
+
+```bash
+# Configure training/config.py first, then:
+python training/main.py
+```
+
+This runs all 8 stages: install deps → merge raw data → MTCNN align → pHash dedup → split → augment → train → evaluate.
+
+Outputs: `project_outputs/models/`, `project_outputs/plots/`, `project_outputs/results/`
+
+### Option 3 — Legacy MLflow pipeline
+
+```bash
+python src/collect_data.py   # Scrape images
+python src/split_dataset.py  # Split dataset
+python src/augment.py        # Augment
+python src/train.py          # Train with MLflow tracking
+mlflow ui --port 5000        # View experiments
+python src/evaluate.py       # Evaluate
+```
+
+### Single-image prediction
+
+```bash
+# ArcFace model
+python training/predict.py --image face.jpg --model inception_resnet_v1 --top-k 3
+
+# CE model
+python training/predict.py --image face.jpg --model resnet50
 ```
 
 ---
