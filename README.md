@@ -81,6 +81,9 @@ A React-based glassmorphism frontend and a Flask inference API make the system p
 | InceptionResNetV1 (VGGFace2 + ArcFace) | **97.06%** | 0.9804 | 0.9730 | 0.9748 |
 | InceptionResNetV1 (CASIA-WebFace + ArcFace) | **96.32%** | 0.9655 | 0.9697 | 0.9653 |
 | ResNet-50 (ImageNet transfer) | **96.32%** | 0.9687 | 0.9673 | 0.9662 |
+| InceptionResNetV1 (VGGFace2 + ArcFace) | **95.59%** | 0.9689 | 0.9504 | 0.9573 |
+| InceptionResNetV1 (CASIA-WebFace + ArcFace) | **96.32%** | 0.9645 | 0.9608 | 0.9607 |
+| ResNet-50 (ImageNet transfer) | **94.85%** | 0.9596 | 0.9534 | 0.9550 |
 
 ArcFace models train with `s=64.0`, `m=0.3`; validation uses no-margin logits; early stopping (patience 10) selects the best checkpoint. ResNet-50 uses a standard classification head with label smoothing and class weights.
 
