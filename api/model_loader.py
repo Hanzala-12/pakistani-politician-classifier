@@ -11,7 +11,8 @@ import sys
 
 # Add src to path
 sys.path.append(str(Path(__file__).parent.parent))
-from src.train import get_model, CLASS_NAMES
+# Avoid importing heavy training module at import-time (mlflow, timm).
+# `get_model` will be imported lazily only when needed for classifier checkpoints.
 
 # Device configuration
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -33,29 +34,43 @@ class ModelLoader:
     def _load_all_models(self):
         """Load all trained models from models/saved/"""
         print("Loading models...")
-        
-        model_dir = Path('models/saved')
-        if not model_dir.exists():
-            print("Warning: models/saved/ directory not found")
+
+        # search common model directories (project_outputs preferred)
+        model_dirs = [
+            Path('project_outputs/models'),
+            Path('models/saved'),
+            Path('models'),
+            Path('project_outputs/models/saved')
+        ]
+
+        model_files = []
+        for d in model_dirs:
+            if d.exists():
+                model_files.extend(list(d.glob('*_best.pth')))
+
+        if not model_files:
+            print("Warning: no model checkpoints found in expected locations:")
+            for d in model_dirs:
+                print(f"  - {d}")
             return
-        
-        model_files = list(model_dir.glob('*_best.pth'))
         
         for model_file in model_files:
             model_name = model_file.stem.replace('_best', '')
-            
+
             try:
-                # Load model
-                model = get_model(model_name, num_classes=16)
-                checkpoint = torch.load(model_file, map_location=device)
-                model.load_state_dict(checkpoint['model_state_dict'])
-                model.eval()
-                
-                self._models[model_name] = model
-                print(f"  ✓ Loaded: {model_name}")
-                
+                # Inspect checkpoint only (defer heavy model instantiation until requested)
+                checkpoint = torch.load(model_file, map_location='cpu')
+                keys = list(checkpoint.keys())
+                # store path + summary info; actual object created on demand
+                self._models[model_name] = {
+                    'path': model_file,
+                    'keys': keys,
+                    'class_names': checkpoint.get('class_names')
+                }
+                print(f"  [OK] Registered: {model_name} (checkpoint keys: {keys})")
+
             except Exception as e:
-                print(f"  ✗ Failed to load {model_name}: {e}")
+                print(f"  Failed to register {model_name}: {e}")
         
         # Determine best model
         self._determine_best_model()
@@ -66,10 +81,12 @@ class ModelLoader:
     
     def _determine_best_model(self):
         """Determine best model from results/model_comparison.csv"""
-        comparison_file = Path('results/model_comparison.csv')
-        
-        if not comparison_file.exists():
-            # Default to first loaded model
+        # Prefer project_outputs results, fall back to results/
+        candidates = [Path('project_outputs/results/model_comparison.csv'), Path('results/model_comparison.csv')]
+
+        comparison_file = next((p for p in candidates if p.exists()), None)
+
+        if comparison_file is None:
             if self._models:
                 self._best_model_name = list(self._models.keys())[0]
             return
@@ -104,8 +121,20 @@ class ModelLoader:
         
         if model_name not in self._models:
             raise ValueError(f"Model '{model_name}' not found. Available: {list(self._models.keys())}")
-        
-        return self._models[model_name]
+
+        stored = self._models[model_name]
+
+        # If we stored a path/summary, instantiate a runtime predictor via backend.model_loader
+        if isinstance(stored, dict) and 'path' in stored:
+            try:
+                from backend.model_loader import get_predictor
+                predictor = get_predictor(model_key=model_name)
+                return predictor
+            except Exception:
+                # Fallback: return stored metadata if backend loader is unavailable
+                return stored
+
+        return stored
     
     def get_available_models(self) -> list:
         """Get list of available model names"""

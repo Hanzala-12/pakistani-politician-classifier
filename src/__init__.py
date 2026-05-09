@@ -1,2 +1,2 @@
-# Pakistani Politician Image Classifier
-# Source package initialization
+# Pakistani Politician Image Classifier – Training Pipeline
+# src/ package initialization
