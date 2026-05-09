@@ -17,6 +17,7 @@ from sklearn.metrics import (
 )
 from tqdm import tqdm
 import mlflow
+from src.mlflow_utils import configure_mlflow
 
 # Import from train.py
 from train import (
@@ -226,9 +227,9 @@ def evaluate_all_models():
                 'Macro F1': f'{f1:.4f}'
             })
             
-            # Log to MLflow
+            # Log to MLflow (configured via env)
             try:
-                mlflow.set_experiment("Pakistani-Politician-Classifier")
+                configure_mlflow("Pakistani-Politician-Classifier")
                 with mlflow.start_run(run_name=f"{model_name}_evaluation"):
                     mlflow.log_metrics({
                         "test_accuracy": test_acc,

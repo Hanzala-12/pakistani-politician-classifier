@@ -17,6 +17,7 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 import mlflow
 import mlflow.pytorch
+from src.mlflow_utils import configure_mlflow, register_model_if_requested
 from torch.cuda.amp import GradScaler, autocast
 
 # Device configuration
@@ -362,8 +363,11 @@ def train_model(model_name, config):
     )
     scaler = GradScaler()
     
-    # MLflow tracking
-    mlflow.set_experiment("Pakistani-Politician-Classifier")
+    # MLflow tracking (configure from environment if provided)
+    try:
+        configure_mlflow("Pakistani-Politician-Classifier")
+    except Exception:
+        pass
     
     with mlflow.start_run(run_name=model_name):
         # Log parameters
@@ -451,6 +455,13 @@ def train_model(model_name, config):
         
         # Log model
         mlflow.pytorch.log_model(model, artifact_path="model")
+        # Optionally register model to Model Registry if configured
+        try:
+            # mlflow.pytorch.log_model returns a local artifact path; construct a model URI
+            model_uri = f"runs:/{mlflow.active_run().info.run_id}/model"
+            register_model_if_requested(model_uri, model_name)
+        except Exception:
+            pass
         
         print(f"\n✓ Training completed for {model_name}")
         print(f"  Best Val Accuracy: {best_val_acc*100:.2f}%")

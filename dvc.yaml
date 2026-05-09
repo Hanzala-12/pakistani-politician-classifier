@@ -19,8 +19,6 @@ stages:
     deps:
       - src/augment.py
       - dataset/train
-    outs:
-      - dataset/train
 
   train:
     cmd: python src/train.py

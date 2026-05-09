@@ -4,7 +4,7 @@ import os
 from typing import Dict, List, Optional
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageOps
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -240,6 +240,8 @@ class ModelPredictor:
             self.model.eval()
 
             self.mtcnn = MTCNN(keep_all=True, device=self.device)
+            # make detector a bit more permissive for small/rotated faces
+            self.mtcnn = MTCNN(keep_all=True, device=self.device, min_face_size=20, thresholds=[0.5, 0.6, 0.7])
             self.transform = transforms.Compose([
                 transforms.Resize(ARC_IMAGE_SIZE),
                 transforms.CenterCrop(ARC_IMAGE_SIZE),
@@ -267,13 +269,45 @@ class ModelPredictor:
     def align_face(self, image: Image.Image) -> Optional[Image.Image]:
         if self.mtcnn is None:
             return None
-        boxes, probs, landmarks = self.mtcnn.detect(image, landmarks=True)
-        if boxes is None or landmarks is None:
-            return None
+        # Handle EXIF orientation first
+        img = ImageOps.exif_transpose(image)
 
-        areas = (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
-        idx = int(np.argmax(areas))
-        return align_face_with_landmarks(image, boxes[idx], landmarks[idx], image_size=ARC_IMAGE_SIZE)
+        try:
+            boxes, probs, landmarks = self.mtcnn.detect(img, landmarks=True)
+        except Exception:
+            boxes, probs, landmarks = None, None, None
+
+        # If no detection, try a fallback: upscale image and retry (helps with small faces)
+        if boxes is None or landmarks is None:
+            try:
+                w, h = img.size
+                # avoid huge upscales; cap at 2000 px
+                up_w = min(w * 2, 2000)
+                up_h = min(h * 2, 2000)
+                up = img.resize((int(up_w), int(up_h)), Image.BICUBIC)
+                boxes_u, probs_u, landmarks_u = self.mtcnn.detect(up, landmarks=True)
+                if boxes_u is not None and landmarks_u is not None:
+                    # scale boxes/landmarks back to original image coordinates
+                    scale_x = up.width / float(w)
+                    scale_y = up.height / float(h)
+                    boxes = boxes_u.copy()
+                    boxes[:, [0, 2]] = boxes[:, [0, 2]] / scale_x
+                    boxes[:, [1, 3]] = boxes[:, [1, 3]] / scale_y
+                    landmarks = landmarks_u.copy()
+                    landmarks[:, :, 0] = landmarks[:, :, 0] / scale_x
+                    landmarks[:, :, 1] = landmarks[:, :, 1] / scale_y
+                else:
+                    return None
+            except Exception:
+                return None
+
+        # choose largest detected face
+        try:
+            areas = (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
+            idx = int(np.argmax(areas))
+            return align_face_with_landmarks(img, boxes[idx], landmarks[idx], image_size=ARC_IMAGE_SIZE)
+        except Exception:
+            return None
 
     def embeddings_to_logits(self, embeddings: torch.Tensor) -> torch.Tensor:
         if self.arcface_eval is None:

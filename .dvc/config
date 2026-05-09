@@ -1,0 +1,7 @@
+[core]
+    # Placeholder DVC config. Set remote in CI or locally using `dvc remote add`.
+    remote = default
+
+[remote "default"]
+    url = s3://your-bucket/path/to/dvc-cache
+    # Use one of: s3, ssh, gdrive, azure, gs, hdfs. Replace above with your remote.

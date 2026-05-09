@@ -121,14 +121,8 @@ export default function App() {
       const data = await response.json();
       if (data.error) setSingleError(data.error);
       else setSingleResult(data);
-    } catch (error) {
-      setTimeout(() => {
-        setSingleResult({
-          predicted_class: "imran_khan", confidence: 0.874,
-          top3: [{ class: "imran_khan", confidence: 0.874 }, { class: "nawaz_sharif", confidence: 0.065 }, { class: "shahbaz_sharif", confidence: 0.032 }]
-        });
-        setSingleLoading(false);
-      }, 1500);
+    } catch (error: any) {
+      setSingleError(error?.message || "Failed to contact backend. Ensure backend is running and reachable.");
     } finally {
       setSingleLoading(false);
     }
@@ -186,23 +180,9 @@ export default function App() {
       const data = await response.json();
       setBatchResults(data);
     } catch (err: any) {
-      setBatchError(err.message || "Failed to process batch. Ensure backend is running locally on port 5000.");
-      // MOCK DATA for preview purposes
-      setTimeout(() => {
-        const mockResults: BatchResultItem[] = batchFiles.map((f, i) => ({
-          filename: f.name,
-          predictions: i % 3 === 0 ? undefined : [
-            { label: "imran_khan", confidence: 0.92 },
-            { label: "shahbaz_sharif", confidence: 0.05 }
-          ],
-          error: i % 3 === 0 ? "No face detected" : undefined,
-          inference_time_ms: 150 + Math.random() * 100
-        }));
-        setBatchResults(mockResults);
-        setBatchLoading(false);
-      }, 2000);
+      setBatchError(err?.message || "Failed to process batch. Ensure backend is running locally on port 5000.");
     } finally {
-      if (!batchError) setBatchLoading(false); // only set to false if no fetch error caught before mock runs
+      setBatchLoading(false);
     }
   };
 

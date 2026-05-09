@@ -1,8 +1,12 @@
 import io
 import time
+import sys
+from pathlib import Path
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from PIL import Image
+
+sys.path.append(str(Path(__file__).parent))
 
 import model_loader as model_loader
 from model_loader import get_predictor
