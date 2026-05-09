@@ -35,9 +35,9 @@ This project classifies 16 Pakistani politicians from facial images using three 
 
 | Model | Test Accuracy |
 |---|---|
-| InceptionResNetV1 + ArcFace (VGGFace2) | **97.06%** |
+| InceptionResNetV1 + ArcFace (VGGFace2) | **95.59%** |
 | InceptionResNetV1 + ArcFace (CASIA-WebFace) | **96.32%** |
-| ResNet-50 (ImageNet transfer learning) | **96.32%** |
+| ResNet-50 (ImageNet transfer learning) | **94.85%** |
 
 All three models exceed the 90% target accuracy. The pipeline includes MTCNN face detection, landmark-based alignment, perceptual-hash deduplication, stratified splitting, offline augmentation, and a complete evaluation suite — including TTA, per-class metrics, confusion matrices, and top-5 misclassified samples.
 
