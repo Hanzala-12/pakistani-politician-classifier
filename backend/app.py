@@ -45,6 +45,11 @@ def predict():
         predictor = get_predictor(model_key=model_key)
     except (FileNotFoundError, ValueError, RuntimeError) as exc:
         return jsonify({"error": str(exc)}), 400
+    except Exception as exc:
+        import traceback
+        print(f"DEBUG: Full traceback for model key '{model_key}':")
+        traceback.print_exc()
+        return jsonify({"error": f"Model loading error: {type(exc).__name__}: {str(exc)}"}), 400
 
     result = predictor.predict_pil(image, top_k=3)
 
@@ -131,7 +136,11 @@ def predict_batch():
         predictor = get_predictor(model_key=model_key)
     except (FileNotFoundError, ValueError, RuntimeError) as exc:
         return jsonify({'error': str(exc)}), 400
-
+    except Exception as exc:
+        import traceback
+        print(f"DEBUG: Full traceback for batch model key '{model_key}':")
+        traceback.print_exc()
+        return jsonify({'error': f"Model loading error: {type(exc).__name__}: {str(exc)}"}), 400
     results = []
     for uploaded in files:
         filename = getattr(uploaded, 'filename', None)

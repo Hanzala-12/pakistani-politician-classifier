@@ -191,7 +191,11 @@ class FaceEmbeddingModel(nn.Module):
 def build_classifier_model(arch: str, num_classes: int) -> nn.Module:
     if arch == "resnet50":
         model = models.resnet50(pretrained=False)
-        model.fc = nn.Linear(model.fc.in_features, num_classes)
+        # Some checkpoints store a dropout+linear head (fc.0, fc.1). Match that layout
+        model.fc = nn.Sequential(
+            nn.Dropout(0.5),
+            nn.Linear(model.fc.in_features, num_classes),
+        )
         return model
     raise ValueError(f"Unsupported classifier architecture '{arch}'.")
 
