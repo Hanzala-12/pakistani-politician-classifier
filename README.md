@@ -9,6 +9,8 @@
 
 An end-to-end facial recognition system that identifies 16 Pakistani politicians from images. Built with ArcFace metric learning and MTCNN face alignment, served through a Flask/FastAPI backend and a React frontend.
 
+📖 **Write-up:** [I Built a Face Recognizer for 16 Pakistani Politicians — Here's Everything That Went Wrong (and Right)](https://medium.com/@yaqoobhanzala/i-built-a-face-recognizer-for-16-pakistani-politicians-heres-everything-that-went-wrong-and-dd189bf68a16) — the full story on Medium: the data-collection cull, why ArcFace over plain softmax, the training tricks, and the honest limitations.
+
 ---
 
 ## Table of Contents
